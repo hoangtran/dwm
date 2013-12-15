@@ -50,6 +50,7 @@ static const Layout layouts[] = {
 	{ "[F]",      NULL },    /* no layout function means floating behavior */
 	{ "[S]",      bstack},
 	{ "[M]",      monocle },
+	{  NULL,      NULL },
 };
 
 /* key definitions */
@@ -68,7 +69,7 @@ static const char  *dmenucmd[] = { "dmenu_run", "-fn", font, "-nb", colors[0][Co
 static const char   *termcmd[] = { "urxvtc", NULL };
 static const char  *xtermcmd[] = { "xterm",  NULL };
 static const char   *mailcmd[] = { "urxvtc", "-title", "mutt", "-e", "mutt", NULL };
-static const char    *padcmd[] = { "urxvtc", "-title", "scratchpad", "-geometry", "62x10+800+600", NULL };
+static const char    *padcmd[] = { "urxvtc", "-title", "scratchpad", "-geometry", "62x10+640+480", NULL };
 static const char   *lockcmd[] = { "slock", NULL };
 static const char *rebootcmd[] = { "sudo", "shutdown", "-r", "now", NULL };
 static const char   *shutcmd[] = { "sudo", "shutdown", "-h", "now", NULL };
@@ -81,8 +82,8 @@ static Key keys[] = {
 	{ MODKEY,                       XK_t,      spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_m,      spawn,          {.v = mailcmd } },
 	{ MODKEY,                       XK_x,      spawn,          {.v = xtermcmd } },
-	{ MODKEY,                       XK_f,      spawn,          {.v = ffcmd } },
-	{ MODKEY,                       XK_g,      spawn,          {.v = chromecmd } },
+	{ MODKEY|ShiftMask,             XK_f,      spawn,          {.v = ffcmd } },
+	{ MODKEY|ShiftMask,             XK_g,      spawn,          {.v = chromecmd } },
 	{ MODKEY,                       XK_w,      spawn,          SHCMD("$(tabbed -d >/tmp/tabbed.xid); vimprobable2 -e $(</tmp/tabbed.xid)") },
 	{ MODKEY,                       XK_o,      spawn,          {.v = padcmd } },
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
@@ -101,11 +102,10 @@ static Key keys[] = {
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,                       XK_c,      killclient,     {0} },
 	{ MODKEY|ShiftMask,             XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY|ShiftMask,             XK_f,      setlayout,      {.v = &layouts[1]} },
-	{ MODKEY|ShiftMask,             XK_s,      setlayout,      {.v = &layouts[2]} },
-	{ MODKEY|ShiftMask,             XK_m,      setlayout,      {.v = &layouts[3]} },
-	{ MODKEY,                       XK_space,  setlayout,      {0} },
-	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
+	{ MODKEY,                       XK_s,      setlayout,      {.v = &layouts[2]} },
+	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[3]} },
+	{ MODKEY,                       XK_space,  nextlayout,     {0} },
+	{ MODKEY|ShiftMask,             XK_space,  prevlayout,     {0} },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
 	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
 	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
