@@ -1,8 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-/*static const char font[]            = "-*-terminus-medium-r-*-*-16-*-*-*-*-*-*-*";*/
-static const char font[]            = "-*-tamsyn-medium-*-*-*-17-*-*-*-*-*-iso8859-*";
+static const char font[]            = "-*-terminus-medium-r-*-*-16-*-*-*-*-*-*-*";
 static const char normbordercolor[] = "#444444";
 static const char normbgcolor[]     = "#222222";
 static const char normfgcolor[]     = "#bbbbbb";
@@ -10,12 +9,12 @@ static const char selbordercolor[]  = "#005577";
 static const char selbgcolor[]      = "#005577";
 static const char selfgcolor[]      = "#eeeeee";
 static const unsigned int borderpx  = 1;        /* border pixel of windows */
-static const unsigned int snap      = 32;       /* snap pixel */
+static const unsigned int snap      = 8;        /* snap pixel */
 static const Bool showbar           = True;     /* False means no bar */
 static const Bool topbar            = True;     /* False means bottom bar */
 
 /* tagging */
-static const char *tags[] = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+static const char *tags[] = { "1-main", "2-web", "3-mail", "4-file", "5-misc", };
 
 static const Rule rules[] = {
 	/* xprop(1):
@@ -23,12 +22,12 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "Firefox",  NULL,       NULL,       2 << 8,       False,       -1 },
-	{ "Chromium",  NULL,       NULL,       2 << 8,       False,       -1 },
+	{ "Firefox",  NULL,       NULL,       1 << 1,       False,       -1 },
+	{ "Chromium", NULL,       NULL,       1 << 1,       False,       -1 },
 };
 
 /* layout(s) */
-static const float mfact      = 0.55; /* factor of master area size [0.05..0.95] */
+static const float mfact      = 0.6;  /* factor of master area size [0.05..0.95] */
 static const int nmaster      = 1;    /* number of clients in master area */
 static const Bool resizehints = True; /* True means respect size hints in tiled resizals */
 
