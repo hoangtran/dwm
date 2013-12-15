@@ -42,6 +42,7 @@
 #ifdef XINERAMA
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
+#include <X11/Xft/Xft.h>
 
 /* macros */
 #define BUTTONMASK              (ButtonPressMask|ButtonReleaseMask)
@@ -103,15 +104,14 @@ struct Client {
 
 typedef struct {
 	int x, y, w, h;
-	unsigned long colors[MAXCOLORS][ColLast];
+	XftColor colors[MAXCOLORS][ColLast];
 	Drawable drawable;
 	GC gc;
 	struct {
 		int ascent;
 		int descent;
 		int height;
-		XFontSet set;
-		XFontStruct *xfont;
+		XftFont *xfont;
 	} font;
 } DC; /* draw context */
 
@@ -184,15 +184,15 @@ static Monitor *dirtomon(int dir);
 static void drawbar(Monitor *m);
 static void drawbars(void);
 static void drawcoloredtext(char *text);
-static void drawsquare(Bool filled, Bool empty, unsigned long col[ColLast]);
-static void drawtext(const char *text, unsigned long col[ColLast], Bool pad);
+static void drawsquare(Bool filled, Bool empty, XftColor col[ColLast]);
+static void drawtext(const char *text, XftColor col[ColLast], Bool pad);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
 static void focusin(XEvent *e);
 static void focusmon(const Arg *arg);
 static void focusstack(const Arg *arg);
-static unsigned long getcolor(const char *colstr);
+static XftColor getcolor(const char *colstr);
 static Bool getrootptr(int *x, int *y);
 static long getstate(Window w);
 static Bool gettextprop(Window w, Atom atom, char *text, unsigned int size);
@@ -523,10 +523,6 @@ cleanup(void) {
 	for(m = mons; m; m = m->next)
 		while(m->stack)
 			unmanage(m->stack, False);
-	if(dc.font.set)
-		XFreeFontSet(dpy, dc.font.set);
-	else
-		XFreeFont(dpy, dc.font.xfont);
 	XUngrabKey(dpy, AnyKey, AnyModifier, root);
 	XFreePixmap(dpy, dc.drawable);
 	XFreeGC(dpy, dc.gc);
@@ -764,7 +760,7 @@ void
 drawbar(Monitor *m) {
 	int x;
 	unsigned int i, occ = 0, urg = 0;
-	unsigned long *col;
+	XftColor *col;
 	Client *c;
 
 	for(c = m->clients; c; c = c->next) {
@@ -822,7 +818,7 @@ drawbars(void) {
 void
 drawcoloredtext(char *text) {
 	char *buf = text, *ptr = buf, c = 1;
-	unsigned long *col = dc.colors[0];
+	XftColor *col = dc.colors[0];
 	int i, ox = dc.x;
 
 	while( *ptr ) {
@@ -844,11 +840,11 @@ drawcoloredtext(char *text) {
 }
 
 void
-drawsquare(Bool filled, Bool empty, unsigned long col[ColLast]) {
+drawsquare(Bool filled, Bool empty, XftColor col[ColLast]) {
 
 	int x;
 
-	XSetForeground(dpy, dc.gc, col[ColFG]);
+	XSetForeground(dpy, dc.gc, col[ColFG].pixel);
 	x = (dc.font.ascent + dc.font.descent + 2) / 4;
 	if(filled)
 		XFillRectangle(dpy, dc.drawable, dc.gc, dc.x+1, dc.y+1, x+1, x+1);
@@ -857,11 +853,12 @@ drawsquare(Bool filled, Bool empty, unsigned long col[ColLast]) {
 }
 
 void
-drawtext(const char *text, unsigned long col[ColLast], Bool pad) {
+drawtext(const char *text, XftColor col[ColLast], Bool pad) {
 	char buf[256];
 	int i, x, y, h, len, olen;
+	XftDraw *d;
 
-	XSetForeground(dpy, dc.gc, col[ColBG]);
+	XSetForeground(dpy, dc.gc, col[ColBG].pixel);
 	XFillRectangle(dpy, dc.drawable, dc.gc, dc.x, dc.y, dc.w, dc.h);
 	if(!text)
 		return;
@@ -876,11 +873,11 @@ drawtext(const char *text, unsigned long col[ColLast], Bool pad) {
 	memcpy(buf, text, len);
 	if(len < olen)
 		for(i = len; i && i > len - 3; buf[--i] = '.');
-	XSetForeground(dpy, dc.gc, col[ColFG]);
-	if(dc.font.set)
-		XmbDrawString(dpy, dc.drawable, dc.font.set, dc.gc, x, y, buf, len);
-	else
-		XDrawString(dpy, dc.drawable, dc.gc, x, y, buf, len);
+
+	d = XftDrawCreate(dpy, dc.drawable, DefaultVisual(dpy, screen), DefaultColormap(dpy,screen));
+
+	XftDrawStringUtf8(d, (XftColor *)&col[ColFG].pixel, dc.font.xfont, x, y, (XftChar8 *)buf, len);
+	XftDrawDestroy(d);
 }
 
 void
@@ -926,7 +923,7 @@ focus(Client *c) {
 		detachstack(c);
 		attachstack(c);
 		grabbuttons(c, True);
-		XSetWindowBorder(dpy, c->win, dc.colors[1][ColBorder]);
+		XSetWindowBorder(dpy, c->win, dc.colors[1][ColBorder].pixel);
 		setfocus(c);
 	}
 	else
@@ -997,14 +994,14 @@ getatomprop(Client *c, Atom prop) {
 	return atom;
 }
 
-unsigned long
+XftColor 
 getcolor(const char *colstr) {
-	Colormap cmap = DefaultColormap(dpy, screen);
-	XColor color;
+	XftColor color;
 
-	if(!XAllocNamedColor(dpy, cmap, colstr, &color, &color))
+	if(!XftColorAllocName(dpy, DefaultVisual(dpy, screen), DefaultColormap(dpy, screen), colstr, &color))
 		die("error, cannot allocate color '%s'\n", colstr);
-	return color.pixel;
+
+	return color;
 }
 
 Bool
@@ -1105,35 +1102,13 @@ incnmaster(const Arg *arg) {
 
 void
 initfont(const char *fontstr) {
-	char *def, **missing;
-	int n;
 
-	dc.font.set = XCreateFontSet(dpy, fontstr, &missing, &n, &def);
-	if(missing) {
-		while(n--)
-			fprintf(stderr, "dwm: missing fontset: %s\n", missing[n]);
-		XFreeStringList(missing);
-	}
-	if(dc.font.set) {
-		XFontStruct **xfonts;
-		char **font_names;
+	if(!(dc.font.xfont = XftFontOpenName(dpy,screen,fontstr))
+	&& !(dc.font.xfont = XftFontOpenName(dpy,screen,"fixed")))
+		die("error, cannot load font: '%s'\n", fontstr);
 
-		dc.font.ascent = dc.font.descent = 0;
-		XExtentsOfFontSet(dc.font.set);
-		n = XFontsOfFontSet(dc.font.set, &xfonts, &font_names);
-		while(n--) {
-			dc.font.ascent = MAX(dc.font.ascent, (*xfonts)->ascent);
-			dc.font.descent = MAX(dc.font.descent,(*xfonts)->descent);
-			xfonts++;
-		}
-	}
-	else {
-		if(!(dc.font.xfont = XLoadQueryFont(dpy, fontstr))
-		&& !(dc.font.xfont = XLoadQueryFont(dpy, "fixed")))
-			die("error, cannot load font: '%s'\n", fontstr);
-		dc.font.ascent = dc.font.xfont->ascent;
-		dc.font.descent = dc.font.xfont->descent;
-	}
+	dc.font.ascent = dc.font.xfont->ascent;
+	dc.font.descent = dc.font.xfont->descent;
 	dc.font.height = dc.font.ascent + dc.font.descent;
 }
 
@@ -1215,7 +1190,7 @@ manage(Window w, XWindowAttributes *wa) {
 
 	wc.border_width = c->bw;
 	XConfigureWindow(dpy, w, CWBorderWidth, &wc);
-	XSetWindowBorder(dpy, w, dc.colors[0][ColBorder]);
+	XSetWindowBorder(dpy, w, dc.colors[0][ColBorder].pixel);
 	configure(c); /* propagates border_width, if size doesn't change */
 	updatewindowtype(c);
 	updatesizehints(c);
@@ -1750,8 +1725,6 @@ setup(void) {
 	dc.drawable = XCreatePixmap(dpy, root, DisplayWidth(dpy, screen), bh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, NULL);
 	XSetLineAttributes(dpy, dc.gc, 1, LineSolid, CapButt, JoinMiter);
-	if(!dc.font.set)
-		XSetFont(dpy, dc.gc, dc.font.xfont->fid);
 	/* init bars */
 	updatebars();
 	updatestatus();
@@ -1857,7 +1830,6 @@ textnw(const char *text, unsigned int len) {
 	char *ptr = (char *) text;
 	unsigned int i, ibuf, lenbuf=len;
 	char buf[len+1];
-	XRectangle r;
 
 	for(i=0, ibuf=0; *ptr && i<len; i++, ptr++) {
 		if(*ptr <= NUMCOLORS && *ptr > 0) {
@@ -1869,11 +1841,9 @@ textnw(const char *text, unsigned int len) {
 	}
 	buf[ibuf]=0;
 
-	if(dc.font.set) {
-		XmbTextExtents(dc.font.set, buf, lenbuf, NULL, &r);
-		return r.width;
-	}
-	return XTextWidth(dc.font.xfont, buf, lenbuf);
+	XGlyphInfo ext;
+	XftTextExtentsUtf8(dpy, dc.font.xfont, (XftChar8 *)buf, lenbuf, &ext);
+	return ext.xOff;
 }
 
 void
@@ -1951,7 +1921,7 @@ unfocus(Client *c, Bool setfocus) {
 	if(!c)
 		return;
 	grabbuttons(c, False);
-	XSetWindowBorder(dpy, c->win, dc.colors[0][ColBorder]);
+	XSetWindowBorder(dpy, c->win, dc.colors[0][ColBorder].pixel);
 	if(setfocus)
 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
 }

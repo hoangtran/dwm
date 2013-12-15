@@ -1,7 +1,7 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-static const char font[]   = "-*-tamsyn-medium-*-*-*-17-*-*-*-*-*-iso8859-*";
+static const char font[]   = "Verdana:size=12";
 #define NUMCOLORS 9 
 static const char colors[NUMCOLORS][ColLast][9] = {
 // border foreground background
