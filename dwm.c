@@ -20,7 +20,7 @@
  *
  * To understand everything else, start reading main().
  *
- * Patched with bstack, cycle, push & statuscolours
+ * Patched with bstack, cycle, push, statuscolours & xft
  */
 #include <errno.h>
 #include <locale.h>
@@ -773,11 +773,9 @@ drawbar(Monitor *m) {
 	dc.x = 0;
 	for(i = 0; i < LENGTH(tags); i++) {
 		dc.w = TEXTW(tags[i]);
-		col = dc.colors[ (m->tagset[m->seltags] & 1 << i) ?
-			1 : (urg & 1 << i ? 2:0) ];
+		col = dc.colors[(m->tagset[m->seltags] & 1 << i) ? 1 : (urg & 1 << i ? 2:0)];
 		drawtext(tags[i], col, True);
-		drawsquare(m == selmon && selmon->sel && selmon->sel->tags & 1 << i,
-				occ & 1 << i, col);
+		drawsquare(m == selmon && selmon->sel && selmon->sel->tags & 1 << i, occ & 1 << i, col);
 		dc.x += dc.w;
 	}
 	dc.w = blw = TEXTW(m->ltsymbol);
@@ -798,7 +796,7 @@ drawbar(Monitor *m) {
 	if((dc.w = dc.x - x) > bh) {
 		dc.x = x;
 		if(m->sel) {
-			col = dc.colors[ m == selmon ? 1 : 0 ];
+			col = dc.colors[m == selmon ? 1 : 0];
 			drawtext(m->sel->name, col, True);
 			drawsquare(m->sel->isfixed, m->sel->isfloating, col);
 		}
@@ -823,18 +821,19 @@ drawcoloredtext(char *text) {
 	XftColor *col = dc.colors[0];
 	int i, ox = dc.x;
 
-	while( *ptr ) {
-		for( i = 0; *ptr < 0 || *ptr > NUMCOLORS; i++, ptr++);
-		if( !*ptr ) break;
-		c=*ptr;
-		*ptr=0;
-		if( i ) {
+	while(*ptr) {
+		for(i = 0; *ptr < 0 || *ptr > NUMCOLORS; i++, ptr++);
+		if(!*ptr)
+			break;
+		c = *ptr;
+		*ptr = 0;
+		if(i) {
 			dc.w = selmon->ww - dc.x;
 			drawtext(buf, col, False);
 			dc.x += textnw(buf, i);
 		}
 		*ptr = c;
-		col = dc.colors[ c-1 ];
+		col = dc.colors[c-1];
 		buf = ++ptr;
 	}
 	drawtext(buf, col, False);
@@ -843,7 +842,6 @@ drawcoloredtext(char *text) {
 
 void
 drawsquare(Bool filled, Bool empty, XftColor col[ColLast]) {
-
 	int x;
 
 	XSetForeground(dpy, dc.gc, col[ColFG].pixel);
@@ -1741,10 +1739,10 @@ setup(void) {
 	cursor[CurResize] = XCreateFontCursor(dpy, XC_sizing);
 	cursor[CurMove] = XCreateFontCursor(dpy, XC_fleur);
 	/* init appearance */
-	for(int i=0; i<NUMCOLORS; i++) {
-		dc.colors[i][ColBorder] = getcolor( colors[i][ColBorder] );
-		dc.colors[i][ColFG] = getcolor( colors[i][ColFG] );
-		dc.colors[i][ColBG] = getcolor( colors[i][ColBG] );
+	for(int i = 0; i < NUMCOLORS; i++) {
+		dc.colors[i][ColBorder] = getcolor(colors[i][ColBorder]);
+		dc.colors[i][ColFG] = getcolor(colors[i][ColFG]);
+		dc.colors[i][ColBG] = getcolor(colors[i][ColBG]);
 	}
 	dc.drawable = XCreatePixmap(dpy, root, DisplayWidth(dpy, screen), bh, DefaultDepth(dpy, screen));
 	dc.gc = XCreateGC(dpy, root, 0, NULL);
@@ -1851,19 +1849,19 @@ tagmon(const Arg *arg) {
 int
 textnw(const char *text, unsigned int len) {
 	// remove non-printing color codes before calculating width
-	char *ptr = (char *) text;
-	unsigned int i, ibuf, lenbuf=len;
-	char buf[len+1];
+	char *ptr = (char *)text;
+	unsigned int i, ibuf, lenbuf = len;
+	char buf[len + 1];
 
-	for(i=0, ibuf=0; *ptr && i<len; i++, ptr++) {
+	for(i = 0, ibuf = 0; *ptr && i < len; i++, ptr++) {
 		if(*ptr <= NUMCOLORS && *ptr > 0) {
 			if (i < len) { lenbuf--; }
 		} else {
-			buf[ibuf]=*ptr;
+			buf[ibuf] = *ptr;
 			ibuf++;
 		}
 	}
-	buf[ibuf]=0;
+	buf[ibuf] = 0;
 
 	XGlyphInfo ext;
 	XftTextExtentsUtf8(dpy, dc.font.xfont, (XftChar8 *)buf, lenbuf, &ext);
