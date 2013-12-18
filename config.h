@@ -28,13 +28,15 @@ static const Rule rules[] = {
         { "Chromium",    NULL,       NULL,       1 << 1,       False,       -1 },
         { "Firefox",     NULL,       NULL,       1 << 1,       False,       -1 },
         { "Vimprobable", NULL,       NULL,       1 << 1,       False,       -1 },
-        { "Tabbed",      NULL,       NULL,       1 << 1,       False,       -1 },
+        { "tabbed",      NULL,       NULL,       1 << 1,       False,       -1 },
         { "Skype",       NULL,       NULL,       1 << 2,       True,        -1 },
         { "Filezilla",   NULL,       NULL,       1 << 3,       True,        -1 },
         { "MPlayer",     NULL,       NULL,       1 << 4,       True,        -1 },
         { "Pcmanfm",     NULL,       NULL,       1 << 3,       True,        -1 },
-        {  NULL,         NULL,      "mutt",      1 << 3,       False,       -1 },
-        {  NULL,         NULL,      "tmux",      1 << 2,       False,       -1 },
+        {  NULL,         NULL,      "mutt",      1 << 2,       False,       -1 },
+        {  NULL,         NULL,      "irssi",     1 << 2,       False,       -1 },
+        {  NULL,         NULL,      "ranger",    1 << 3,       False,       -1 },
+        {  NULL,         NULL,      "tmux",      1 << 0,       False,       -1 },
         {  NULL,         NULL,      "ssh",       1 << 0,       False,       -1 },
         {  NULL,         NULL,      "scratchpad",     0,       True,        -1 },
 };
@@ -69,12 +71,15 @@ static const char  *dmenucmd[] = { "dmenu_run", "-fn", font, "-nb", colors[0][Co
 static const char   *termcmd[] = { "urxvtc", NULL };
 static const char  *xtermcmd[] = { "xterm",  NULL };
 static const char   *mailcmd[] = { "urxvtc", "-title", "mutt", "-e", "mutt", NULL };
+static const char  *irssicmd[] = { "urxvtc", "-title", "irssi", "-e", "irssi", NULL};
+static const char *rangercmd[] = { "urxvtc", "-title", "ranger", "-e", "ranger", NULL};
 static const char    *padcmd[] = { "urxvtc", "-title", "scratchpad", "-geometry", "62x10+640+480", NULL };
 static const char   *lockcmd[] = { "slock", NULL };
 static const char *rebootcmd[] = { "sudo", "shutdown", "-r", "now", NULL };
 static const char   *shutcmd[] = { "sudo", "shutdown", "-h", "now", NULL };
 static const char *chromecmd[] = { "chromium", NULL };
 static const char     *ffcmd[] = { "firefox", NULL };
+static const char  *skypecmd[] = { "skype", NULL };
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -82,6 +87,8 @@ static Key keys[] = {
 	{ MODKEY,                       XK_t,      spawn,          {.v = termcmd } },
 	{ MODKEY,                       XK_m,      spawn,          {.v = mailcmd } },
 	{ MODKEY,                       XK_x,      spawn,          {.v = xtermcmd } },
+	{ MODKEY,                       XK_i,      spawn,          {.v = irssicmd } },
+	{ MODKEY,                       XK_r,      spawn,          {.v = rangercmd } },
 	{ MODKEY|ShiftMask,             XK_f,      spawn,          {.v = ffcmd } },
 	{ MODKEY|ShiftMask,             XK_g,      spawn,          {.v = chromecmd } },
 	{ MODKEY,                       XK_w,      spawn,          SHCMD("$(tabbed -d >/tmp/tabbed.xid); vimprobable2 -e $(</tmp/tabbed.xid)") },
@@ -89,27 +96,28 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
 	{ MODKEY|ControlMask|ShiftMask, XK_r,      spawn,          {.v = rebootcmd } },
 	{ MODKEY|ControlMask|ShiftMask, XK_q,      spawn,          {.v = shutcmd } },
+	{ MODKEY,                       XK_s,      spawn,          {.v = skypecmd } },
 	{ MODKEY,                       XK_b,      togglebar,      {0} },
 	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
 	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_j,      pushdown,       {0} },
 	{ MODKEY|ShiftMask,             XK_k,      pushup,         {0} },
-	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+	{ MODKEY,                       XK_comma,  incnmaster,     {.i = +1 } },
+	{ MODKEY,                       XK_period, incnmaster,     {.i = -1 } },
 	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
 	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
 	{ MODKEY,                       XK_Return, zoom,           {0} },
 	{ MODKEY,                       XK_Tab,    view,           {0} },
 	{ MODKEY,                       XK_c,      killclient,     {0} },
 	{ MODKEY|ShiftMask,             XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                       XK_s,      setlayout,      {.v = &layouts[2]} },
+	{ MODKEY|ShiftMask,             XK_s,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[3]} },
 	{ MODKEY,                       XK_space,  nextlayout,     {0} },
 	{ MODKEY|ShiftMask,             XK_space,  prevlayout,     {0} },
 	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
 	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
-	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
-	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+	{ MODKEY|ShiftMask,             XK_h,      focusmon,       {.i = -1 } },
+	{ MODKEY|ShiftMask,             XK_l,      focusmon,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
 	{ MODKEY,                       XK_Left,   cycle,          {.i = -1 } },
@@ -117,8 +125,8 @@ static Key keys[] = {
 	{ MODKEY|ControlMask,           XK_Left,   tagcycle,       {.i = -1 } },
 	{ MODKEY|ControlMask,           XK_Right,  tagcycle,       {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_w,      toggleview,     {.ui = 1 << 1 }},
-	{ MODKEY|ShiftMask,             XK_t,      toggleview,     {.ui = 1 << 2 }},
-	{ MODKEY|ShiftMask,             XK_m,      toggleview,     {.ui = 1 << 3 }},
+	{ MODKEY|ShiftMask,             XK_m,      toggleview,     {.ui = 1 << 2 }},
+	{ MODKEY|ShiftMask,             XK_e,      toggleview,     {.ui = 1 << 3 }},
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)
