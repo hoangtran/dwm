@@ -93,7 +93,7 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_g,      spawn,          {.v = chromecmd } },
 	{ MODKEY,                       XK_w,      spawn,          SHCMD("$(tabbed -d >/tmp/tabbed.xid); vimprobable2 -e $(</tmp/tabbed.xid)") },
 	{ MODKEY,                       XK_o,      spawn,          {.v = padcmd } },
-	{ MODKEY|ShiftMask,             XK_l,      spawn,          {.v = lockcmd } },
+	{ MODKEY|ShiftMask,             XK_z,      spawn,          {.v = lockcmd } },
 	{ MODKEY|ControlMask|ShiftMask, XK_r,      spawn,          {.v = rebootcmd } },
 	{ MODKEY|ControlMask|ShiftMask, XK_q,      spawn,          {.v = shutcmd } },
 	{ MODKEY,                       XK_s,      spawn,          {.v = skypecmd } },
